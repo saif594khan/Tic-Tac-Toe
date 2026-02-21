@@ -18,7 +18,6 @@
             --current-glow: var(--blue-x);
         }
 
-        /* Prevent scrolling entirely */
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh;
             overflow: hidden; background-color: var(--bg-a);
@@ -30,68 +29,75 @@
             transition: background-color 0.8s ease;
         }
 
-        /* Scalable Container */
+        /* Container height reduced slightly to lift buttons */
         .game-container { 
-            width: 100%; height: 98vh; max-width: 400px;
+            width: 100%; height: 92vh; max-width: 400px;
             display: flex; flex-direction: column;
             justify-content: space-between; align-items: center;
             padding: 10px 20px; box-sizing: border-box; z-index: 10;
         }
 
-        header h1 { font-weight: 200; letter-spacing: 4px; margin: 0; font-size: 5vh; text-transform: uppercase; }
+        header h1 { font-weight: 200; letter-spacing: 4px; margin: 0; font-size: 3.5vh; text-transform: uppercase; }
 
         .scoreboard {
             display: flex; justify-content: space-around; width: 100%;
-            background: rgba(0, 0, 0, 0.4); padding: 1.5vh; border-radius: 12px;
+            background: rgba(0, 0, 0, 0.4); padding: 1vh; border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .score-box h3 { margin: 0; font-size: 1.2vh; text-transform: uppercase; opacity: 0.7; }
-        .score-val { font-size: 4vh; font-weight: 900; }
+        .score-box h3 { margin: 0; font-size: 1vh; text-transform: uppercase; opacity: 0.7; }
+        .score-val { font-size: 3vh; font-weight: 900; }
 
         #status {
-            font-size: 2.5vh; font-weight: bold; height: 3vh;
+            font-size: 2vh; font-weight: bold; height: 2.5vh;
             text-shadow: 0 0 15px var(--current-glow);
         }
 
-        /* Board scales based on screen height to prevent overflow */
+        /* Board size adjusted to keep layout compact */
         .board {
             display: grid;
-            grid-template-columns: repeat(3, 10vh); 
-            grid-template-rows: repeat(3, 10vh);
-            gap: 1.2vh; margin: 1vh 0;
+            grid-template-columns: repeat(3, 9vh); 
+            grid-template-rows: repeat(3, 9vh);
+            gap: 1vh; margin: 0.5vh 0;
         }
 
         .cell {
             background-color: var(--cell-bg); border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px; display: flex; justify-content: center; align-items: center;
-            font-size: 5vh; font-weight: 900; cursor: pointer;
+            font-size: 4vh; font-weight: 900; cursor: pointer;
         }
 
         .x-player { color: var(--blue-x); text-shadow: 0 0 10px var(--blue-x); }
         .o-player { color: var(--red-o); text-shadow: 0 0 10px var(--red-o); }
 
-        .controls { display: flex; gap: 10px; width: 100%; padding-bottom: 10px; }
+        /* Controls lifted with margin-bottom */
+        .controls { 
+            display: flex; gap: 10px; width: 100%; 
+            margin-bottom: 2vh; 
+        }
 
         button {
-            flex: 1; padding: 1.5vh; font-size: 1.5vh; font-weight: bold;
+            flex: 1; padding: 1.2vh; font-size: 1.3vh; font-weight: bold;
             cursor: pointer; background: rgba(255,255,255,0.05); color: white;
             border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
+            transition: 0.2s;
         }
+
+        button:hover { background: rgba(255,255,255,0.1); border-color: white; }
 
         #overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
             z-index: 100; flex-direction: column; justify-content: center; align-items: center;
         }
 
-        #overlay button { flex: none; width: 180px; background: var(--gold-draw); color: black; border: none; }
+        #overlay button { flex: none; width: 180px; margin-top: 20px; background: var(--gold-draw); color: black; border: none; }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <h1 style="font-size: 1.2rem; opacity: 0.8;">GRAND CHAMPION</h1>
-        <h2 id="champion-name" style="font-size: 4rem; color: var(--gold-draw); margin: 20px 0;">PLAYER</h2>
+        <h1 style="font-size: 1rem; opacity: 0.8;">GRAND CHAMPION</h1>
+        <h2 id="champion-name" style="font-size: 3.5rem; color: var(--gold-draw); margin: 10px 0;">PLAYER</h2>
         <button onclick="fullReset()">New Tournament</button>
     </div>
 
@@ -141,6 +147,26 @@
             document.getElementById('scoreDraws').innerText = draws;
         }
 
+        function fireCelebration() {
+            const end = Date.now() + (3000); 
+            const mainColors = [players[currentPlayer].color, '#ffffff'];
+            const fringeColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors: mainColors });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: mainColors });
+                
+                if (Math.random() > 0.7) {
+                    confetti({
+                        particleCount: 2, startVelocity: 30, spread: 360,
+                        origin: { x: Math.random(), y: Math.random() - 0.2 },
+                        colors: fringeColors, scalar: 0.6 
+                    });
+                }
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
         function handleCellClick(e) {
             const idx = e.target.getAttribute('data-index');
             if (gameState[idx] !== "" || !gameActive) return;
@@ -161,6 +187,7 @@
                 statusText.innerText = `${players[currentPlayer].name} Wins!`;
                 players[currentPlayer].wins++;
                 gameActive = false;
+                fireCelebration();
                 if (players[currentPlayer].wins === 3) {
                     setTimeout(() => {
                         document.getElementById('champion-name').innerText = players[currentPlayer].name.toUpperCase();

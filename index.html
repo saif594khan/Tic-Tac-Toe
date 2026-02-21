@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tic Tac Toe</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --blue-x: #3498db;
+            --red-o: #e74c3c;
+            --gold-draw: #f1c40f; 
+            --bg-a: #0a192f;
+            --bg-b: #2d0a0a;
+            --bg-draw: #2d2a0a;
+            --cell-bg: rgba(255, 255, 255, 0.05);
+            --text-light: #e9ecef;
+            --current-glow: var(--blue-x);
+        }
+
+        /* Prevent scrolling entirely */
+        html, body {
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            overflow: hidden; background-color: var(--bg-a);
+            color: var(--text-light); font-family: 'Segoe UI', sans-serif;
+        }
+
+        body { 
+            display: flex; justify-content: center; align-items: center; 
+            transition: background-color 0.8s ease;
+        }
+
+        /* Scalable Container */
+        .game-container { 
+            width: 100%; height: 98vh; max-width: 400px;
+            display: flex; flex-direction: column;
+            justify-content: space-between; align-items: center;
+            padding: 10px 20px; box-sizing: border-box; z-index: 10;
+        }
+
+        header h1 { font-weight: 200; letter-spacing: 4px; margin: 0; font-size: 5vh; text-transform: uppercase; }
+
+        .scoreboard {
+            display: flex; justify-content: space-around; width: 100%;
+            background: rgba(0, 0, 0, 0.4); padding: 1.5vh; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .score-box h3 { margin: 0; font-size: 1.2vh; text-transform: uppercase; opacity: 0.7; }
+        .score-val { font-size: 4vh; font-weight: 900; }
+
+        #status {
+            font-size: 2.5vh; font-weight: bold; height: 3vh;
+            text-shadow: 0 0 15px var(--current-glow);
+        }
+
+        /* Board scales based on screen height to prevent overflow */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 10vh); 
+            grid-template-rows: repeat(3, 10vh);
+            gap: 1.2vh; margin: 1vh 0;
+        }
+
+        .cell {
+            background-color: var(--cell-bg); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px; display: flex; justify-content: center; align-items: center;
+            font-size: 5vh; font-weight: 900; cursor: pointer;
+        }
+
+        .x-player { color: var(--blue-x); text-shadow: 0 0 10px var(--blue-x); }
+        .o-player { color: var(--red-o); text-shadow: 0 0 10px var(--red-o); }
+
+        .controls { display: flex; gap: 10px; width: 100%; padding-bottom: 10px; }
+
+        button {
+            flex: 1; padding: 1.5vh; font-size: 1.5vh; font-weight: bold;
+            cursor: pointer; background: rgba(255,255,255,0.05); color: white;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
+        }
+
+        #overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            z-index: 100; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        #overlay button { flex: none; width: 180px; background: var(--gold-draw); color: black; border: none; }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1 style="font-size: 1.2rem; opacity: 0.8;">GRAND CHAMPION</h1>
+        <h2 id="champion-name" style="font-size: 4rem; color: var(--gold-draw); margin: 20px 0;">PLAYER</h2>
+        <button onclick="fullReset()">New Tournament</button>
+    </div>
+
+    <div class="game-container">
+        <header><h1>Championship</h1></header>
+
+        <div class="scoreboard">
+            <div class="score-box"><h3 id="p1-label">A</h3><div class="score-val" id="scoreX" style="color: var(--blue-x)">0</div></div>
+            <div class="score-box"><h3 style="opacity: 0.4">Draws</h3><div class="score-val" id="scoreDraws" style="color: var(--gold-draw)">0</div></div>
+            <div class="score-box"><h3 id="p2-label">B</h3><div class="score-val" id="scoreO" style="color: var(--red-o)">0</div></div>
+        </div>
+
+        <div id="status">Ready</div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div><div class="cell" data-index="1"></div><div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div><div class="cell" data-index="4"></div><div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div><div class="cell" data-index="7"></div><div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="controls">
+            <button id="reset">Next Match</button>
+            <button id="changeNames">Names</button>
+        </div>
+    </div>
+
+    <script>
+        const statusText = document.getElementById('status');
+        const cells = document.querySelectorAll('.cell');
+        const body = document.body;
+        
+        let players = { X: { name: "A", color: "#3498db", wins: 0 }, O: { name: "B", color: "#e74c3c", wins: 0 } };
+        let draws = 0, currentPlayer = "X", gameState = Array(9).fill(""), gameActive = true;
+        const winningConditions = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+        function updateUI(isDraw = false) {
+            if (isDraw) {
+                body.style.backgroundColor = "var(--bg-draw)";
+                statusText.style.color = "var(--gold-draw)";
+            } else if (gameActive) {
+                statusText.innerText = `${players[currentPlayer].name}'s Turn`;
+                statusText.style.color = players[currentPlayer].color;
+                body.style.backgroundColor = currentPlayer === "X" ? "var(--bg-a)" : "var(--bg-b)";
+            }
+            document.getElementById('scoreX').innerText = players.X.wins;
+            document.getElementById('scoreO').innerText = players.O.wins;
+            document.getElementById('scoreDraws').innerText = draws;
+        }
+
+        function handleCellClick(e) {
+            const idx = e.target.getAttribute('data-index');
+            if (gameState[idx] !== "" || !gameActive) return;
+            gameState[idx] = currentPlayer;
+            e.target.innerText = currentPlayer;
+            e.target.classList.add(currentPlayer === "X" ? 'x-player' : 'o-player');
+            checkResult();
+        }
+
+        function checkResult() {
+            let win = false;
+            for (let cond of winningConditions) {
+                if (gameState[cond[0]] && gameState[cond[0]] === gameState[cond[1]] && gameState[cond[0]] === gameState[cond[2]]) {
+                    win = true; break;
+                }
+            }
+            if (win) {
+                statusText.innerText = `${players[currentPlayer].name} Wins!`;
+                players[currentPlayer].wins++;
+                gameActive = false;
+                if (players[currentPlayer].wins === 3) {
+                    setTimeout(() => {
+                        document.getElementById('champion-name').innerText = players[currentPlayer].name.toUpperCase();
+                        document.getElementById('overlay').style.display = 'flex';
+                    }, 1000);
+                }
+                updateUI();
+                return;
+            }
+            if (!gameState.includes("")) { 
+                statusText.innerText = "Draw!"; 
+                draws++; gameActive = false; 
+                updateUI(true);
+                return; 
+            }
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            updateUI();
+        }
+
+        function fullReset() { players.X.wins = 0; players.O.wins = 0; draws = 0; document.getElementById('overlay').style.display = 'none'; nextMatch(); }
+        function nextMatch() {
+            gameState = Array(9).fill(""); gameActive = true; currentPlayer = "X";
+            cells.forEach(c => { c.innerText = ""; c.className = "cell"; });
+            updateUI();
+        }
+        
+        document.getElementById('reset').onclick = nextMatch;
+        document.getElementById('changeNames').onclick = () => {
+            players.X.name = prompt("Player A Name:", players.X.name) || "A";
+            players.O.name = prompt("Player B Name:", players.O.name) || "B";
+            document.getElementById('p1-label').innerText = players.X.name;
+            document.getElementById('p2-label').innerText = players.O.name;
+            updateUI();
+        };
+        cells.forEach(c => c.addEventListener('click', handleCellClick));
+        updateUI();
+    </script>
+</body>
+</html>

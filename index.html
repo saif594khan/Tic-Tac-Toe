@@ -105,9 +105,9 @@
         <header><h1>Championship</h1></header>
 
         <div class="scoreboard">
-            <div class="score-box"><h3 id="p1-label">A</h3><div class="score-val" id="scoreX" style="color: var(--blue-x)">0</div></div>
+            <div class="score-box"><h3 id="p1-label">Player 1</h3><div class="score-val" id="scoreX" style="color: var(--blue-x)">0</div></div>
             <div class="score-box"><h3 style="opacity: 0.4">Draws</h3><div class="score-val" id="scoreDraws" style="color: var(--gold-draw)">0</div></div>
-            <div class="score-box"><h3 id="p2-label">B</h3><div class="score-val" id="scoreO" style="color: var(--red-o)">0</div></div>
+            <div class="score-box"><h3 id="p2-label">Player 2</h3><div class="score-val" id="scoreO" style="color: var(--red-o)">0</div></div>
         </div>
 
         <div id="status">Ready</div>
@@ -129,7 +129,7 @@
         const cells = document.querySelectorAll('.cell');
         const body = document.body;
         
-        let players = { X: { name: "A", color: "#3498db", wins: 0 }, O: { name: "B", color: "#e74c3c", wins: 0 } };
+        let players = { X: { name: "Player 1", color: "#3498db", wins: 0 }, O: { name: "Player 2", color: "#e74c3c", wins: 0 } };
         let draws = 0, currentPlayer = "X", gameState = Array(9).fill(""), gameActive = true;
         const winningConditions = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
@@ -216,8 +216,8 @@
         
         document.getElementById('reset').onclick = nextMatch;
         document.getElementById('changeNames').onclick = () => {
-            players.X.name = prompt("Player A Name:", players.X.name) || "A";
-            players.O.name = prompt("Player B Name:", players.O.name) || "B";
+            players.X.name = prompt("Player 1 Name:", players.X.name) || "Player 1";
+            players.O.name = prompt("Player 2 Name:", players.O.name) || "Player 2";
             document.getElementById('p1-label').innerText = players.X.name;
             document.getElementById('p2-label').innerText = players.O.name;
             updateUI();
